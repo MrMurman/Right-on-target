@@ -6,69 +6,99 @@
 //
 
 import UIKit
+import Foundation
 
 class ViewController: UIViewController {
-
+    
+    // Create entity "Game"
+    var game: Game!
+    
     @IBOutlet var slider: UISlider!
     @IBOutlet var label: UILabel!
     
-    //загаданное число
-    var number: Int = 0
+   
+    // ленивое свойство для хранения View Controller
+//    lazy var secondViewController: SecondViewController = getSecondViewController()
     
-    //раунд
-    var round: Int = 0
     
-    //сумма очков за раунд
-    var points: Int = 0
+    
+    
+    override func loadView() {
+        super.loadView()
+        print("loadView()")
+        
+//        // создаем метку для вывода номера версии
+//        let versionLabel = UILabel(frame: CGRect(x: 20, y: 10, width: 200, height: 20))
+//        // изменяем текст метки
+//        versionLabel.text = "Верися 0.2"
+//        // добавляем метку в родительский view
+//        self.view.addSubview(versionLabel)
+    }
+    
+    //MARK: - Life Cycle
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do any additional setup after loading the view.
+       
+        // Create an instance of "Game" entity
+        game = Game(startValue: Int(slider.minimumValue), endValue: Int(slider.maximumValue), rounds: 5)
+        
+        // Update info about current mystery number
+        updateLabelWithSecretNumber(newText: String(game.currentSecretValue))
+        
+        print(game!.currentSecretValue)
     }
 
+    
+
+    // MARK: - Model interaction
+    
     @IBAction func checkNumber(_ sender: UIButton) {
-        //если игра только начинается
-        if self.round == 0 {
-            // генерируем случайное число
-            self.number = Int.random(in: 1...50)
-            // передаем значение в Лейбл
-            self.label.text = String(number)
-            // устанавливаем счетчик раундов на 1
-            self.round = 1
+        
+        // Calculate round score
+        game.calculateScore(with: Int(slider.value))
+        
+        // Find whether game is over
+        if game.isGameEnded {
+            showAlertWit(score: game.score)
         } else {
-            // получаем значение на слайдере
-            let numSlider = Int(self.slider.value.rounded())
-            // сравниваем значение с загаданным
-            if numSlider > self.number {
-                self.points += 50 - numSlider + self.number
-            } else if numSlider < self.number {
-                self.points += 50 - self.number + numSlider
-            } else {
-                self.points += 50
-            }
-            
-            if self.round == 5 {
-                // выводим информацию в окно
-                let alert = UIAlertController(title: "Игра окончена", message: "Вы заработали \(self.points) очков", preferredStyle: .alert)
-                alert.addAction(UIAlertAction(title: "Начать заново", style: .default, handler: nil))
-                self.present(alert, animated: true, completion: nil)
-                self.round = 1
-                self.points = 0
-            } else {
-                self.round += 1
-            }
-            self.number = Int.random(in: 1...50)
-            self.label.text = String(self.number)
+            game.startNewRound()
         }
         
+        // Update info about current mystery number
+        updateLabelWithSecretNumber(newText: String(game.currentSecretValue))
         
-//        switch slider.value {
-//        case Float(number):
-//            points = 50
-//        case Float((number + 1)...50):
-//            points = 50 - number + Int(slider.value)
+        
+        print(game.currentSecretValue)
+    }
+        
+   
+    // MARK: - View update
+    // Mystery number text update
+    private func updateLabelWithSecretNumber(newText: String) {
+        label.text = newText
+    }
+    
+    private func showAlertWit(score: Int) {
+        let alert = UIAlertController(title: "Игра окончена", message: "Вы заработали \(score) очков", preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "Начать заново", style: .default, handler: nil))
+        self.present(alert, animated: true, completion: game.restartGame)
+    }
+    
+    
+    //MARK: - Random stuff
+    // приватный метод, загружающий View Controller
+    private func getSecondViewController() -> SecondViewController {
+        let storyboard = UIStoryboard(name: "Main", bundle: nil)
+        let viewController = storyboard.instantiateViewController(identifier: "SecondViewController")
+        return viewController as! SecondViewController
+    }
+    
+    
+        
+
         
     }
     
-}
+
 
